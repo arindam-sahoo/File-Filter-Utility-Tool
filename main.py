@@ -36,10 +36,23 @@ class FileFilterApp(tk.Tk):
         for text, mode in filters:
             ttk.Radiobutton(filter_frame, text=text, variable=self.filter_var, value=mode, command=self.display_files).pack(side=tk.LEFT, padx=5)
 
-        # Bottom frame for file list
-        self.files_listbox = tk.Listbox(self, width=80, height=20)
-        self.files_listbox.grid(row=2, column=0, padx=10, pady=10, sticky="NSEW")
+        # Bottom frame for file list and action buttons
+        list_frame = ttk.Frame(self, padding="10 10 10 10")
+        list_frame.grid(row=2, column=0, sticky="NSEW")
+        
+        self.files_listbox = tk.Listbox(list_frame, width=80, height=20)
+        self.files_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.files_listbox.bind("<Double-1>", self.open_file)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.files_listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.files_listbox.config(yscrollcommand=scrollbar.set)
+
+        action_frame = ttk.Frame(self, padding="10 10 10 10")
+        action_frame.grid(row=3, column=0, sticky="EW")
+
+        ttk.Button(action_frame, text="Delete", command=self.delete_file).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Rename", command=self.rename_file).pack(side=tk.LEFT, padx=5)
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
@@ -83,6 +96,38 @@ class FileFilterApp(tk.Tk):
                 subprocess.Popen(f'explorer "{full_path}"')
             else:
                 os.startfile(full_path)
+
+    def delete_file(self):
+        selected_index = self.files_listbox.curselection()
+        if selected_index:
+            selected_file = self.files_listbox.get(selected_index)
+            full_path = os.path.join(self.folder_path.get(), selected_file)
+            if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{selected_file}'?"):
+                try:
+                    if os.path.isdir(full_path):
+                        os.rmdir(full_path)
+                    else:
+                        os.remove(full_path)
+                    self.display_files()
+                    messagebox.showinfo("Success", f"'{selected_file}' has been deleted.")
+                except Exception as e:
+                    messagebox.showerror("Error", str(e))
+
+    def rename_file(self):
+        selected_index = self.files_listbox.curselection()
+        if selected_index:
+            selected_file = self.files_listbox.get(selected_index)
+            full_path = os.path.join(self.folder_path.get(), selected_file)
+            new_name = filedialog.asksaveasfilename(initialdir=self.folder_path.get(), initialfile=selected_file, title="Rename File or Folder")
+            if new_name:
+                new_name = os.path.basename(new_name)
+                new_full_path = os.path.join(self.folder_path.get(), new_name)
+                try:
+                    os.rename(full_path, new_full_path)
+                    self.display_files()
+                    messagebox.showinfo("Success", f"'{selected_file}' has been renamed to '{new_name}'.")
+                except Exception as e:
+                    messagebox.showerror("Error", str(e))
 
 if __name__ == "__main__":
     app = FileFilterApp()
