@@ -118,14 +118,19 @@ class FileFilterApp(tk.Tk):
         if selected_index:
             selected_file = self.files_listbox.get(selected_index)
             full_path = os.path.join(self.folder_path.get(), selected_file)
-            new_name = filedialog.asksaveasfilename(initialdir=self.folder_path.get(), initialfile=selected_file, title="Rename File or Folder")
+            if os.path.isfile(full_path):
+                file_extension = os.path.splitext(selected_file)[1]
+            else:
+                file_extension = ""
+            
+            new_name = filedialog.asksaveasfilename(initialdir=self.folder_path.get(), initialfile=os.path.splitext(selected_file)[0], title="Rename File or Folder")
             if new_name:
                 new_name = os.path.basename(new_name)
-                new_full_path = os.path.join(self.folder_path.get(), new_name)
+                new_full_path = os.path.join(self.folder_path.get(), new_name + file_extension)
                 try:
                     os.rename(full_path, new_full_path)
                     self.display_files()
-                    messagebox.showinfo("Success", f"'{selected_file}' has been renamed to '{new_name}'.")
+                    messagebox.showinfo("Success", f"'{selected_file}' has been renamed to '{new_name + file_extension}'.")
                 except Exception as e:
                     messagebox.showerror("Error", str(e))
 
