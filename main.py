@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
+import subprocess
 
 class FileFilterApp(tk.Tk):
     def __init__(self):
@@ -38,7 +39,8 @@ class FileFilterApp(tk.Tk):
         # Bottom frame for file list
         self.files_listbox = tk.Listbox(self, width=80, height=20)
         self.files_listbox.grid(row=2, column=0, padx=10, pady=10, sticky="NSEW")
-        
+        self.files_listbox.bind("<Double-1>", self.open_file)
+
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
 
@@ -71,6 +73,16 @@ class FileFilterApp(tk.Tk):
 
         for file in files:
             self.files_listbox.insert(tk.END, file)
+
+    def open_file(self, event):
+        selected_index = self.files_listbox.curselection()
+        if selected_index:
+            selected_file = self.files_listbox.get(selected_index)
+            full_path = os.path.join(self.folder_path.get(), selected_file)
+            if os.path.isdir(full_path):
+                subprocess.Popen(f'explorer "{full_path}"')
+            else:
+                os.startfile(full_path)
 
 if __name__ == "__main__":
     app = FileFilterApp()
