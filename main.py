@@ -5,6 +5,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import subprocess
+import platform
 
 class FileFilterApp(tk.Tk):
     def __init__(self):
@@ -44,6 +45,7 @@ class FileFilterApp(tk.Tk):
         self.files_listbox = tk.Listbox(list_frame, width=80, height=20)
         self.files_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.files_listbox.bind("<Double-1>", self.open_file)
+        self.files_listbox.bind("<Button-3>", self.show_context_menu)
         
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.files_listbox.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -58,6 +60,13 @@ class FileFilterApp(tk.Tk):
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
+
+        # Context menu
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(label="View", command=self.view_file)
+        self.context_menu.add_command(label="Reveal", command=self.reveal_file)
+        self.context_menu.add_command(label="Delete", command=self.delete_file)
+        self.context_menu.add_command(label="Move", command=self.move_file)
 
     def browse_folder(self):
         folder_selected = filedialog.askdirectory()
@@ -158,6 +167,38 @@ class FileFilterApp(tk.Tk):
                     messagebox.showinfo("Success", f"'{selected_file}' has been moved to '{dest_dir}'.")
                 except Exception as e:
                     messagebox.showerror("Error", str(e))
+
+    def show_context_menu(self, event):
+        try:
+            # Select the file where right-click happened
+            self.files_listbox.selection_clear(0, tk.END)
+            self.files_listbox.selection_set(self.files_listbox.nearest(event.y))
+            self.context_menu.post(event.x_root, event.y_root)
+        finally:
+            self.context_menu.grab_release()
+
+    def view_file(self):
+        selected_index = self.files_listbox.curselection()
+        if selected_index:
+            selected_file = self.files_listbox.get(selected_index)
+            full_path = os.path.join(self.folder_path.get(), selected_file)
+            if os.path.isdir(full_path):
+                subprocess.Popen(f'explorer "{full_path}"')
+            else:
+                os.startfile(full_path)
+
+    def reveal_file(self):
+        selected_index = self.files_listbox.curselection()
+        if selected_index:
+            selected_file = self.files_listbox.get(selected_index)
+            full_path = os.path.join(self.folder_path.get(), selected_file)
+            system_name = platform.system()
+            if system_name == 'Windows':
+                subprocess.Popen(['explorer', '/select,', full_path])
+            elif system_name == 'Darwin':
+                subprocess.Popen(['open', '-R', full_path])
+            else:
+                messagebox.showerror("Error", f'{system_name} OS is not supported in this application.')
 
 if __name__ == "__main__":
     app = FileFilterApp()
