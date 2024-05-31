@@ -31,7 +31,7 @@ class FileFilterApp(tk.Tk):
         filter_frame.grid(row=1, column=0, sticky="EW")
         
         self.filter_var = tk.StringVar(value='Images')
-        filters = [("Images", "Images"), ("Videos", "Videos"), ("Zips", "Zips"), ("Folders", "Folders")]
+        filters = [("Images", "Images"), ("Videos", "Videos"), ("Zips", "Zips"), ("Folders", "Folders"), ("PDFs", "PDFs"), ("Docs", "Docs"), ("Sheets", "Sheets"), ("Installers", "Installers")]
         
         for text, mode in filters:
             ttk.Radiobutton(filter_frame, text=text, variable=self.filter_var, value=mode, command=self.display_files).pack(side=tk.LEFT, padx=5)
@@ -76,6 +76,14 @@ class FileFilterApp(tk.Tk):
             extensions = ('.mp4', '.avi', '.mov', '.mkv')
         elif self.filter_var.get() == 'Zips':
             extensions = ('.zip', '.rar', '.7z')
+        elif self.filter_var.get() == 'PDFs':
+            extensions = ('.pdf')
+        elif self.filter_var.get() == 'Docs':
+            extensions = ('.doc', '.docx')
+        elif self.filter_var.get() == 'Sheets':
+            extensions = ('.xlsx', '.xlsm', '.xls', '.xltx', '.xltm')
+        elif self.filter_var.get() == 'Installers':
+            extensions = ('.exe', '.msi')
         elif self.filter_var.get() == 'Folders':
             extensions = None
 
