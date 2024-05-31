@@ -1,4 +1,5 @@
 import os
+import shutil
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
@@ -53,6 +54,7 @@ class FileFilterApp(tk.Tk):
 
         ttk.Button(action_frame, text="Delete", command=self.delete_file).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text="Rename", command=self.rename_file).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Move", command=self.move_file).pack(side=tk.LEFT, padx=5)
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
@@ -139,6 +141,21 @@ class FileFilterApp(tk.Tk):
                     os.rename(full_path, new_full_path)
                     self.display_files()
                     messagebox.showinfo("Success", f"'{selected_file}' has been renamed to '{new_name + file_extension}'.")
+                except Exception as e:
+                    messagebox.showerror("Error", str(e))
+
+    def move_file(self):
+        selected_index = self.files_listbox.curselection()
+        if selected_index:
+            selected_file = self.files_listbox.get(selected_index)
+            full_path = os.path.join(self.folder_path.get(), selected_file)
+            dest_dir = filedialog.askdirectory(title="Select Destination Folder")
+            if dest_dir:
+                new_full_path = os.path.join(dest_dir, selected_file)
+                try:
+                    shutil.move(full_path, new_full_path)
+                    self.display_files()
+                    messagebox.showinfo("Success", f"'{selected_file}' has been moved to '{dest_dir}'.")
                 except Exception as e:
                     messagebox.showerror("Error", str(e))
 
