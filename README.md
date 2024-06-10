@@ -49,10 +49,6 @@ File Filter Utility is a simple Python application that allows users to filter f
 10. Click the "Delete" button to delete the selected file or folder.
 11. Click the "Rename" button to rename the selected file or folder.
 
-## Screenshots
-
-[Add screenshots here if applicable]
-
 ## Contributing
 
 Contributions are welcome! If you have any ideas for improvements or new features, feel free to open an issue or submit a pull request.

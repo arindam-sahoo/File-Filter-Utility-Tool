@@ -6,6 +6,10 @@ from tkinter import filedialog
 from tkinter import messagebox
 import subprocess
 import platform
+from PIL import Image
+import pdfkit
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 class FileFilterApp(tk.Tk):
     def __init__(self):
@@ -57,6 +61,7 @@ class FileFilterApp(tk.Tk):
         ttk.Button(action_frame, text="Delete", command=self.delete_file).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text="Rename", command=self.rename_file).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text="Move", command=self.move_file).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Convert", command=self.convert_file).pack(side=tk.LEFT, padx=5)
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
@@ -67,6 +72,7 @@ class FileFilterApp(tk.Tk):
         self.context_menu.add_command(label="Reveal", command=self.reveal_file)
         self.context_menu.add_command(label="Delete", command=self.delete_file)
         self.context_menu.add_command(label="Move", command=self.move_file)
+        self.context_menu.add_command(label="Convert", command=self.convert_file)
 
     def browse_folder(self):
         folder_selected = filedialog.askdirectory()
@@ -167,6 +173,25 @@ class FileFilterApp(tk.Tk):
                     messagebox.showinfo("Success", f"'{selected_file}' has been moved to '{dest_dir}'.")
                 except Exception as e:
                     messagebox.showerror("Error", str(e))
+
+    def convert_file(self):
+        selected_index = self.files_listbox.curselection()
+        if selected_index:
+            selected_file = self.files_listbox.get(selected_index)
+            full_path = os.path.join(self.folder_path.get(), selected_file)
+
+            if selected_file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.avif')):
+                self.convert_image(full_path)
+
+    def convert_image(self, file_path):
+        new_format = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("GIF files", "*.gif"), ("AVIF files", "*.avif")])
+        if new_format:
+            try:
+                img = Image.open(file_path)
+                img.save(new_format)
+                messagebox.showinfo("Success", f"Image has been converted to {new_format}")
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
 
     def show_context_menu(self, event):
         try:
