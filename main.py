@@ -7,9 +7,6 @@ from tkinter import messagebox
 import subprocess
 import platform
 from PIL import Image
-import pdfkit
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 
 class FileFilterApp(tk.Tk):
     def __init__(self):
@@ -46,7 +43,7 @@ class FileFilterApp(tk.Tk):
         list_frame = ttk.Frame(self, padding="10 10 10 10")
         list_frame.grid(row=2, column=0, sticky="NSEW")
         
-        self.files_listbox = tk.Listbox(list_frame, width=80, height=20)
+        self.files_listbox = tk.Listbox(list_frame, width=80, height=20, selectmode=tk.MULTIPLE)
         self.files_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.files_listbox.bind("<Double-1>", self.open_file)
         self.files_listbox.bind("<Button-3>", self.show_context_menu)
@@ -123,20 +120,25 @@ class FileFilterApp(tk.Tk):
                 os.startfile(full_path)
 
     def delete_file(self):
-        selected_index = self.files_listbox.curselection()
-        if selected_index:
-            selected_file = self.files_listbox.get(selected_index)
-            full_path = os.path.join(self.folder_path.get(), selected_file)
-            if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{selected_file}'?"):
+        selected_indices = self.files_listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Warning", "No files selected.")
+            return
+
+        selected_files = [self.files_listbox.get(i) for i in selected_indices]
+        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {len(selected_files)} files?"):
+            for selected_file in selected_files:
+                full_path = os.path.join(self.folder_path.get(), selected_file)
                 try:
                     if os.path.isdir(full_path):
                         os.rmdir(full_path)
                     else:
                         os.remove(full_path)
-                    self.display_files()
-                    messagebox.showinfo("Success", f"'{selected_file}' has been deleted.")
                 except Exception as e:
                     messagebox.showerror("Error", str(e))
+            self.display_files()
+            messagebox.showinfo("Success", f"{len(selected_files)} files have been deleted.")
+
 
     def rename_file(self):
         selected_index = self.files_listbox.curselection()
@@ -160,19 +162,23 @@ class FileFilterApp(tk.Tk):
                     messagebox.showerror("Error", str(e))
 
     def move_file(self):
-        selected_index = self.files_listbox.curselection()
-        if selected_index:
-            selected_file = self.files_listbox.get(selected_index)
-            full_path = os.path.join(self.folder_path.get(), selected_file)
-            dest_dir = filedialog.askdirectory(title="Select Destination Folder")
-            if dest_dir:
+        selected_indices = self.files_listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Warning", "No files selected.")
+            return
+
+        selected_files = [self.files_listbox.get(i) for i in selected_indices]
+        dest_dir = filedialog.askdirectory(title="Select Destination Folder")
+        if dest_dir:
+            for selected_file in selected_files:
+                full_path = os.path.join(self.folder_path.get(), selected_file)
                 new_full_path = os.path.join(dest_dir, selected_file)
                 try:
                     shutil.move(full_path, new_full_path)
-                    self.display_files()
-                    messagebox.showinfo("Success", f"'{selected_file}' has been moved to '{dest_dir}'.")
                 except Exception as e:
                     messagebox.showerror("Error", str(e))
+            self.display_files()
+            messagebox.showinfo("Success", f"{len(selected_files)} files have been moved to '{dest_dir}'.")
 
     def convert_file(self):
         selected_index = self.files_listbox.curselection()
