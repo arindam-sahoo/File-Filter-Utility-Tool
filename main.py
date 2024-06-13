@@ -7,6 +7,7 @@ from tkinter import messagebox
 import subprocess
 import platform
 from PIL import Image
+from CustomListbox import CustomListbox
 
 class FileFilterApp(tk.Tk):
     def __init__(self):
@@ -43,7 +44,7 @@ class FileFilterApp(tk.Tk):
         list_frame = ttk.Frame(self, padding="10 10 10 10")
         list_frame.grid(row=2, column=0, sticky="NSEW")
         
-        self.files_listbox = tk.Listbox(list_frame, width=80, height=20, selectmode=tk.MULTIPLE)
+        self.files_listbox = CustomListbox(list_frame, width=80, height=20, selectmode=tk.EXTENDED)
         self.files_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.files_listbox.bind("<Double-1>", self.open_file)
         self.files_listbox.bind("<Button-3>", self.show_context_menu)
@@ -110,14 +111,15 @@ class FileFilterApp(tk.Tk):
             self.files_listbox.insert(tk.END, file)
 
     def open_file(self, event):
-        selected_index = self.files_listbox.curselection()
-        if selected_index:
-            selected_file = self.files_listbox.get(selected_index)
-            full_path = os.path.join(self.folder_path.get(), selected_file)
-            if os.path.isdir(full_path):
-                subprocess.Popen(f'explorer "{full_path}"')
-            else:
-                os.startfile(full_path)
+        selected_indices = self.files_listbox.curselection()
+        if selected_indices:
+            for index in selected_indices:
+                selected_file = self.files_listbox.get(index)
+                full_path = os.path.join(self.folder_path.get(), selected_file)
+                if os.path.isdir(full_path):
+                    subprocess.Popen(f'explorer "{full_path}"')
+                else:
+                    os.startfile(full_path)
 
     def delete_file(self):
         selected_indices = self.files_listbox.curselection()
@@ -138,7 +140,6 @@ class FileFilterApp(tk.Tk):
                     messagebox.showerror("Error", str(e))
             self.display_files()
             messagebox.showinfo("Success", f"{len(selected_files)} files have been deleted.")
-
 
     def rename_file(self):
         selected_index = self.files_listbox.curselection()
@@ -181,9 +182,13 @@ class FileFilterApp(tk.Tk):
             messagebox.showinfo("Success", f"{len(selected_files)} files have been moved to '{dest_dir}'.")
 
     def convert_file(self):
-        selected_index = self.files_listbox.curselection()
-        if selected_index:
-            selected_file = self.files_listbox.get(selected_index)
+        selected_indices = self.files_listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Warning", "No files selected.")
+            return
+
+        selected_files = [self.files_listbox.get(i) for i in selected_indices]
+        for selected_file in selected_files:
             full_path = os.path.join(self.folder_path.get(), selected_file)
 
             if selected_file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.avif')):
@@ -209,27 +214,29 @@ class FileFilterApp(tk.Tk):
             self.context_menu.grab_release()
 
     def view_file(self):
-        selected_index = self.files_listbox.curselection()
-        if selected_index:
-            selected_file = self.files_listbox.get(selected_index)
-            full_path = os.path.join(self.folder_path.get(), selected_file)
-            if os.path.isdir(full_path):
-                subprocess.Popen(f'explorer "{full_path}"')
-            else:
-                os.startfile(full_path)
+        selected_indices = self.files_listbox.curselection()
+        if selected_indices:
+            for index in selected_indices:
+                selected_file = self.files_listbox.get(index)
+                full_path = os.path.join(self.folder_path.get(), selected_file)
+                if os.path.isdir(full_path):
+                    subprocess.Popen(f'explorer "{full_path}"')
+                else:
+                    os.startfile(full_path)
 
     def reveal_file(self):
-        selected_index = self.files_listbox.curselection()
-        if selected_index:
-            selected_file = self.files_listbox.get(selected_index)
-            full_path = os.path.join(self.folder_path.get(), selected_file)
-            system_name = platform.system()
-            if system_name == 'Windows':
-                subprocess.Popen(['explorer', '/select,', full_path])
-            elif system_name == 'Darwin':
-                subprocess.Popen(['open', '-R', full_path])
-            else:
-                messagebox.showerror("Error", f'{system_name} OS is not supported in this application.')
+        selected_indices = self.files_listbox.curselection()
+        if selected_indices:
+            for index in selected_indices:
+                selected_file = self.files_listbox.get(index)
+                full_path = os.path.join(self.folder_path.get(), selected_file)
+                system_name = platform.system()
+                if system_name == 'Windows':
+                    subprocess.Popen(['explorer', '/select,', full_path])
+                elif system_name == 'Darwin':
+                    subprocess.Popen(['open', '--reveal', full_path])
+                else:
+                    raise NotImplementedError(f'Unsupported OS: {system_name}')
 
 if __name__ == "__main__":
     app = FileFilterApp()
