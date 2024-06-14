@@ -7,13 +7,14 @@ from tkinter import messagebox
 import subprocess
 import platform
 from PIL import Image
-from CustomListbox import CustomListbox
+import pdfkit
+import datetime
 
 class FileFilterApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("File Filter Utility")
-        self.geometry("600x400")
+        self.geometry("800x600")
         self.create_widgets()
         
     def create_widgets(self):
@@ -43,15 +44,19 @@ class FileFilterApp(tk.Tk):
         # Bottom frame for file list and action buttons
         list_frame = ttk.Frame(self, padding="10 10 10 10")
         list_frame.grid(row=2, column=0, sticky="NSEW")
+
+        self.files_tree = ttk.Treeview(list_frame, columns=("Name", "Size", "Type", "Modified"), show='headings')
+        self.files_tree.heading("Name", text="Name")
+        self.files_tree.heading("Size", text="Size")
+        self.files_tree.heading("Type", text="Type")
+        self.files_tree.heading("Modified", text="Modified")
+        self.files_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.files_tree.bind("<Double-1>", self.open_file)
+        self.files_tree.bind("<Button-3>", self.show_context_menu)
         
-        self.files_listbox = CustomListbox(list_frame, width=80, height=20)
-        self.files_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.files_listbox.bind("<Double-1>", self.open_file)
-        self.files_listbox.bind("<Button-3>", self.show_context_menu)
-        
-        scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.files_listbox.yview)
+        scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.files_tree.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.files_listbox.config(yscrollcommand=scrollbar.set)
+        self.files_tree.config(yscrollcommand=scrollbar.set)
 
         action_frame = ttk.Frame(self, padding="10 10 10 10")
         action_frame.grid(row=3, column=0, sticky="EW")
@@ -84,7 +89,7 @@ class FileFilterApp(tk.Tk):
             messagebox.showerror("Error", "Invalid directory")
             return
 
-        self.files_listbox.delete(0, tk.END)
+        self.files_tree.delete(*self.files_tree.get_children())
         if self.filter_var.get() == 'Images':
             extensions = ('.png', '.jpg', '.jpeg', '.gif', '.avif')
         elif self.filter_var.get() == 'Videos':
@@ -108,13 +113,24 @@ class FileFilterApp(tk.Tk):
             files = [f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))]
 
         for file in files:
-            self.files_listbox.insert(tk.END, file)
+            full_path = os.path.join(directory, file)
+            size = os.path.getsize(full_path)
+            file_type = 'Folder' if os.path.isdir(full_path) else os.path.splitext(file)[1]
+            modified_time = datetime.datetime.fromtimestamp(os.path.getmtime(full_path)).strftime('%Y-%m-%d %H:%M:%S')
+            self.files_tree.insert("", tk.END, values=(file, self.format_size(size), file_type, modified_time))
+
+    def format_size(self, size):
+        # Format size to a readable format
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024:
+                return f"{size:.2f} {unit}"
+            size /= 1024
 
     def open_file(self, event):
-        selected_indices = self.files_listbox.curselection()
-        if selected_indices:
-            for index in selected_indices:
-                selected_file = self.files_listbox.get(index)
+        selected_item = self.files_tree.selection()
+        if selected_item:
+            for item in selected_item:
+                selected_file = self.files_tree.item(item, "values")[0]
                 full_path = os.path.join(self.folder_path.get(), selected_file)
                 if os.path.isdir(full_path):
                     subprocess.Popen(f'explorer "{full_path}"')
@@ -122,12 +138,12 @@ class FileFilterApp(tk.Tk):
                     os.startfile(full_path)
 
     def delete_file(self):
-        selected_indices = self.files_listbox.curselection()
-        if not selected_indices:
+        selected_items = self.files_tree.selection()
+        if not selected_items:
             messagebox.showwarning("Warning", "No files selected.")
             return
 
-        selected_files = [self.files_listbox.get(i) for i in selected_indices]
+        selected_files = [self.files_tree.item(item, "values")[0] for item in selected_items]
         if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {len(selected_files)} files?"):
             for selected_file in selected_files:
                 full_path = os.path.join(self.folder_path.get(), selected_file)
@@ -142,9 +158,9 @@ class FileFilterApp(tk.Tk):
             messagebox.showinfo("Success", f"{len(selected_files)} files have been deleted.")
 
     def rename_file(self):
-        selected_index = self.files_listbox.curselection()
-        if selected_index:
-            selected_file = self.files_listbox.get(selected_index)
+        selected_item = self.files_tree.selection()
+        if selected_item:
+            selected_file = self.files_tree.item(selected_item, "values")[0]
             full_path = os.path.join(self.folder_path.get(), selected_file)
             if os.path.isfile(full_path):
                 file_extension = os.path.splitext(selected_file)[1]
@@ -163,12 +179,12 @@ class FileFilterApp(tk.Tk):
                     messagebox.showerror("Error", str(e))
 
     def move_file(self):
-        selected_indices = self.files_listbox.curselection()
-        if not selected_indices:
+        selected_items = self.files_tree.selection()
+        if not selected_items:
             messagebox.showwarning("Warning", "No files selected.")
             return
 
-        selected_files = [self.files_listbox.get(i) for i in selected_indices]
+        selected_files = [self.files_tree.item(item, "values")[0] for item in selected_items]
         dest_dir = filedialog.askdirectory(title="Select Destination Folder")
         if dest_dir:
             for selected_file in selected_files:
@@ -182,12 +198,12 @@ class FileFilterApp(tk.Tk):
             messagebox.showinfo("Success", f"{len(selected_files)} files have been moved to '{dest_dir}'.")
 
     def convert_file(self):
-        selected_indices = self.files_listbox.curselection()
-        if not selected_indices:
+        selected_items = self.files_tree.selection()
+        if not selected_items:
             messagebox.showwarning("Warning", "No files selected.")
             return
 
-        selected_files = [self.files_listbox.get(i) for i in selected_indices]
+        selected_files = [self.files_tree.item(item, "values")[0] for item in selected_items]
         for selected_file in selected_files:
             full_path = os.path.join(self.folder_path.get(), selected_file)
 
@@ -207,17 +223,16 @@ class FileFilterApp(tk.Tk):
     def show_context_menu(self, event):
         try:
             # Select the file where right-click happened
-            self.files_listbox.selection_clear(0, tk.END)
-            self.files_listbox.selection_set(self.files_listbox.nearest(event.y))
+            self.files_tree.selection_set(self.files_tree.identify_row(event.y))
             self.context_menu.post(event.x_root, event.y_root)
         finally:
             self.context_menu.grab_release()
 
     def view_file(self):
-        selected_indices = self.files_listbox.curselection()
-        if selected_indices:
-            for index in selected_indices:
-                selected_file = self.files_listbox.get(index)
+        selected_items = self.files_tree.selection()
+        if selected_items:
+            for item in selected_items:
+                selected_file = self.files_tree.item(item, "values")[0]
                 full_path = os.path.join(self.folder_path.get(), selected_file)
                 if os.path.isdir(full_path):
                     subprocess.Popen(f'explorer "{full_path}"')
@@ -225,10 +240,10 @@ class FileFilterApp(tk.Tk):
                     os.startfile(full_path)
 
     def reveal_file(self):
-        selected_indices = self.files_listbox.curselection()
-        if selected_indices:
-            for index in selected_indices:
-                selected_file = self.files_listbox.get(index)
+        selected_items = self.files_tree.selection()
+        if selected_items:
+            for item in selected_items:
+                selected_file = self.files_tree.item(item, "values")[0]
                 full_path = os.path.join(self.folder_path.get(), selected_file)
                 system_name = platform.system()
                 if system_name == 'Windows':
