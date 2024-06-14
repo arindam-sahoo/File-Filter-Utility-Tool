@@ -7,14 +7,12 @@ from tkinter import messagebox
 import subprocess
 import platform
 from PIL import Image
-import pdfkit
 import datetime
 
 class FileFilterApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("File Filter Utility")
-        self.geometry("800x600")
         self.create_widgets()
         
     def create_widgets(self):
@@ -46,10 +44,10 @@ class FileFilterApp(tk.Tk):
         list_frame.grid(row=2, column=0, sticky="NSEW")
 
         self.files_tree = ttk.Treeview(list_frame, columns=("Name", "Size", "Type", "Modified"), show='headings')
-        self.files_tree.heading("Name", text="Name")
-        self.files_tree.heading("Size", text="Size")
-        self.files_tree.heading("Type", text="Type")
-        self.files_tree.heading("Modified", text="Modified")
+        self.files_tree.heading("Name", text="Name", command=lambda: self.sort_files("Name"))
+        self.files_tree.heading("Size", text="Size", command=lambda: self.sort_files("Size"))
+        self.files_tree.heading("Type", text="Type", command=lambda: self.sort_files("Type"))
+        self.files_tree.heading("Modified", text="Modified", command=lambda: self.sort_files("Modified"))
         self.files_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.files_tree.bind("<Double-1>", self.open_file)
         self.files_tree.bind("<Button-3>", self.show_context_menu)
@@ -76,6 +74,13 @@ class FileFilterApp(tk.Tk):
         self.context_menu.add_command(label="Delete", command=self.delete_file)
         self.context_menu.add_command(label="Move", command=self.move_file)
         self.context_menu.add_command(label="Convert", command=self.convert_file)
+
+        self.sort_order = {
+            "Name": False,
+            "Size": False,
+            "Type": False,
+            "Modified": False
+        }
 
     def browse_folder(self):
         folder_selected = filedialog.askdirectory()
@@ -125,6 +130,27 @@ class FileFilterApp(tk.Tk):
             if size < 1024:
                 return f"{size:.2f} {unit}"
             size /= 1024
+
+    def sort_files(self, column):
+        data = [(self.files_tree.set(child, column), child) for child in self.files_tree.get_children('')]
+        if column == 'Size':
+            data.sort(key=lambda t: self.sort_helper(t[0]), reverse=self.sort_order[column])
+        elif column == 'Modified':
+            data.sort(key=lambda t: datetime.datetime.strptime(t[0], '%Y-%m-%d %H:%M:%S'), reverse=self.sort_order[column])
+        else:
+            data.sort(reverse=self.sort_order[column])
+        for index, (val, child) in enumerate(data):
+            self.files_tree.move(child, '', index)
+        self.sort_order[column] = not self.sort_order[column]
+
+    def sort_helper(self, value):
+        try:
+            size, unit = value.split()
+            size = float(size)
+            unit_index = ['B', 'KB', 'MB', 'GB', 'TB'].index(unit)
+            return size * (1024 ** unit_index)
+        except ValueError:
+            return value
 
     def open_file(self, event):
         selected_item = self.files_tree.selection()
