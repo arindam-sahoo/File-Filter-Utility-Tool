@@ -44,7 +44,7 @@ class FileFilterApp(tk.Tk):
         list_frame = ttk.Frame(self, padding="10 10 10 10")
         list_frame.grid(row=2, column=0, sticky="NSEW")
         
-        self.files_listbox = CustomListbox(list_frame, width=80, height=20, selectmode=tk.EXTENDED)
+        self.files_listbox = CustomListbox(list_frame, width=80, height=20)
         self.files_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.files_listbox.bind("<Double-1>", self.open_file)
         self.files_listbox.bind("<Button-3>", self.show_context_menu)
