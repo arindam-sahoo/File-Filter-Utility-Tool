@@ -96,11 +96,11 @@ class FileFilterApp(tk.Tk):
 
         self.files_tree.delete(*self.files_tree.get_children())
         if self.filter_var.get() == 'Images':
-            extensions = ('.png', '.jpg', '.jpeg', '.gif', '.avif')
+            extensions = ('.png', '.jpg', '.jpeg', '.gif', '.avif', '.bmp', '.tiff', '.svg', '.raw', '.heif', '.heic', '.psd', '.ico', '.webp')
         elif self.filter_var.get() == 'Videos':
-            extensions = ('.mp4', '.avi', '.mov', '.mkv')
+            extensions = ('.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm', '.mpeg', '.3gp', '.m4v', '.ogv')
         elif self.filter_var.get() == 'Audios':
-            extensions = ('.mp3', '.wav')
+            extensions = ('.mp3', '.wav', '.aac', '.flac', '.m4a', '.ogg', '.aiff', '.wma')
         elif self.filter_var.get() == 'Zips':
             extensions = ('.zip', '.rar', '.7z')
         elif self.filter_var.get() == 'PDFs':
